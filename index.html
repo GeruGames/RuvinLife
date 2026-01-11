@@ -524,6 +524,19 @@
 
     function randomSex() { return Math.random() < 0.5 ? 'Macho' : 'Hembra'; }
 
+    // Gato: a veces "descansa" y a veces "juega solo" incluso sin acciones del usuario.
+    // Lo hacemos determinista por bloques de 15 min para que no parpadee.
+    function getPassiveMode(nowTs) {
+      if (currentPetTipo !== 'Gato') return 'Descansando';
+      if (estadoActividad !== 'Descansando') return estadoActividad;
+      const slot = Math.floor(nowTs / (15 * 60 * 1000)) % 3; // 0,1,2
+      return slot === 2 ? 'Jugando solo' : 'Descansando';
+    }
+
+    function isCatPassivePlaying(nowTs) {
+      return currentPetTipo === 'Gato' && estadoActividad === 'Descansando' && getPassiveMode(nowTs) === 'Jugando solo';
+    }
+
     function etiquetaApetito(valor) {
       if (valor >= 70) return 'Alto';
       if (valor >= 40) return 'Medio';
@@ -652,10 +665,18 @@
       savePetsList(currentUser.id, pets);
 
       const now = Date.now();
+
+      // Diferencias base (v1):
+      // - Gatos: más energía inicial, y gastan energía más lento.
+      // - Perros: energía inicial estándar.
+      const energiaInicial = (cleanTipo === 'Gato')
+        ? (60 + Math.floor(Math.random() * 31))  // 60..90
+        : (45 + Math.floor(Math.random() * 31)); // 45..75
+
       const data = {
         hambre: 20 + Math.floor(Math.random() * 25),
         saciedadReal: 60 + Math.floor(Math.random() * 30),
-        energia: 45 + Math.floor(Math.random() * 30),
+        energia: energiaInicial,
         felicidad: 45 + Math.floor(Math.random() * 30),
         fisicoScore: 45 + Math.floor(Math.random() * 20),
         createdAt: now,
@@ -695,7 +716,8 @@
       document.getElementById('apetitoPill').innerText = `Apetito: ${etiquetaApetito(apetitoAnsiedad)}`;
 
       const tagHambriento = esHambrientoFrom(lastFedAt, now) ? ' · Hambriento' : '';
-      document.getElementById('estadoActividad').innerText = 'Estado: ' + estadoActividad + tagHambriento;
+      const modoPasivo = getPassiveMode(now);
+      document.getElementById('estadoActividad').innerText = 'Estado: ' + modoPasivo + tagHambriento;
 
       document.getElementById('hambre').style.width = clamp(hambre, 0, 100) + '%';
       document.getElementById('saciedad').style.width = clamp(saciedadVisible(), 0, 100) + '%';
@@ -755,7 +777,12 @@
       estadoActividad = 'Jugando';
 
       felicidad = clamp(felicidad + 12, 0, 100);
-      energia = clamp(energia - 10, 0, 100);
+
+      // Diferencias (v1):
+      // Gatos gastan energía más lento.
+      const costoEnergia = (currentPetTipo === 'Gato') ? 6 : 10;
+      energia = clamp(energia - costoEnergia, 0, 100);
+
       saciedadReal = clamp(saciedadReal - 8, 0, 150);
 
       actualizarBarras();
@@ -801,10 +828,22 @@
 
       // Energía
       if (estadoActividad === 'Descansando') {
-        const energiaRegenPerHour = 9.0 * estadoDia.energiaMod;
-        energia = clamp(energia + energiaRegenPerHour * hoursPassed, 0, 100);
+        // Diferencias (v1):
+        // - Gatos recuperan un poco más rápido cuando descansan.
+        // - Gatos a veces "juegan solos" en modo pasivo: gastan poquito y ganan un poco de felicidad.
+        if (isCatPassivePlaying(now)) {
+          const energiaPasivaDrainPerHour = 3.0 * estadoDia.energiaMod; // gasto lento
+          energia = clamp(energia - energiaPasivaDrainPerHour * hoursPassed, 0, 100);
+          const felicidadPasivaGainPerHour = 0.6; // pequeño subidón por entretenerse
+          felicidad = clamp(felicidad + felicidadPasivaGainPerHour * hoursPassed, 0, 100);
+        } else {
+          const energiaRegenBase = (currentPetTipo === 'Gato') ? 11.0 : 9.0;
+          const energiaRegenPerHour = energiaRegenBase * estadoDia.energiaMod;
+          energia = clamp(energia + energiaRegenPerHour * hoursPassed, 0, 100);
+        }
       } else if (estadoActividad === 'Jugando') {
-        const energiaDrainPerHour = 18.0 * estadoDia.energiaMod;
+        const drainBase = (currentPetTipo === 'Gato') ? 14.0 : 18.0; // gato gasta más lento
+        const energiaDrainPerHour = drainBase * estadoDia.energiaMod;
         energia = clamp(energia - energiaDrainPerHour * hoursPassed, 0, 100);
       } else if (estadoActividad === 'Comiendo') {
         const energiaDrainPerHour = 3.0 * estadoDia.energiaMod;
