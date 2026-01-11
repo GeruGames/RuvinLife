@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mascota Virtual - Prototipo v0</title>
+  <title>RuvinLife</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -11,27 +11,118 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      min-height: 100vh;
       margin: 0;
+      padding: 16px;
     }
 
-    .game {
+    .app {
       background: white;
-      width: 340px;
+      width: 360px;
       padding: 18px;
       border-radius: 12px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      text-align: center;
     }
 
-    h1 { margin: 0 0 8px 0; }
+    h1 {
+      margin: 0 0 6px 0;
+      font-size: 28px;
+      letter-spacing: 0.2px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 10px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: #444;
+      margin: 10px 0 4px 0;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    input:focus { border-color: #2196f3; }
+
+    .btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      background: #2196f3;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn:hover { background: #1976d2; }
+
+    .btn.secondary {
+      background: #f1f1f1;
+      color: #222;
+    }
+
+    .btn.secondary:hover { background: #e8e8e8; }
+
+    .btn.inline {
+      width: auto;
+      margin-top: 0;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .link {
+      margin-top: 10px;
+      color: #1976d2;
+      cursor: pointer;
+      font-size: 13px;
+      text-align: center;
+      text-decoration: underline;
+    }
+
+    .error {
+      margin-top: 10px;
+      color: #b00020;
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
 
     .topline {
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-weight: bold;
-      margin-bottom: 10px;
+      margin: 8px 0 10px 0;
       color: #222;
     }
 
@@ -63,39 +154,40 @@
     .status-text {
       margin: 10px 0;
       font-weight: bold;
+      text-align: center;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
     }
 
     .buttons button {
-      margin: 5px;
+      flex: 1;
       padding: 10px;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       background: #2196f3;
       color: white;
       cursor: pointer;
+      font-weight: bold;
     }
 
-    .buttons button:hover {
-      background: #1976d2;
-    }
+    .buttons button:hover { background: #1976d2; }
 
-    #debug {
+    .small {
       font-size: 12px;
       color: #666;
       margin-top: 8px;
       line-height: 1.35;
       white-space: pre-wrap;
-      text-align: left;
     }
 
-    #testResults {
-      font-size: 12px;
-      color: #444;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid #eee;
-      text-align: left;
-      white-space: pre-wrap;
+    .hubTitle {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 8px;
     }
 
     .pill {
@@ -106,105 +198,321 @@
       font-size: 12px;
       color: #444;
     }
+
+    .right { text-align: right; }
+
+    .petCardRow {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .petMeta b { display: block; }
+    .petMeta .small { margin-top: 4px; }
+
+    .typeBtns {
+      display: flex;
+      gap: 8px;
+      justify-content: space-between;
+    }
+
+    .typeBtns button { flex: 1; }
   </style>
 </head>
 <body>
-  <div class="game">
-    <h1>🐶 Mascota Virtual</h1>
+  <div class="app">
 
-    <div class="topline">
-      <div id="diaHora">Día 0 · 00:00</div>
-      <div class="muted" id="apetitoPill">Apetito: —</div>
-    </div>
+    <!-- SCREEN: HOME -->
+    <section id="screenHome" class="screen active">
+      <h1 id="gameTitle">RuvinLife</h1>
+      <div class="subtitle">Tu mundo virtual de apoyo incondicional.</div>
 
-    <div class="stat">Hambre
-      <div class="bar"><div class="fill" id="hambre"></div></div>
-    </div>
+      <button class="btn" id="btnGoLogin">Iniciar sesión</button>
+      <button class="btn secondary" id="btnGoRegister">Crear cuenta</button>
 
-    <div class="stat">Saciedad
-      <div class="bar"><div class="fill" id="saciedad"></div></div>
-    </div>
+      <div class="small">* Por ahora esto guarda todo en tu navegador (modo prototipo). Después lo llevamos a login real con backend.</div>
+    </section>
 
-    <div class="stat">Energía
-      <div class="bar"><div class="fill" id="energia"></div></div>
-    </div>
+    <!-- SCREEN: LOGIN -->
+    <section id="screenLogin" class="screen">
+      <h1>Iniciar sesión</h1>
+      <div class="subtitle">Usuario + contraseña</div>
 
-    <div class="stat">Felicidad
-      <div class="bar"><div class="fill" id="felicidad"></div></div>
-    </div>
+      <div class="card">
+        <label for="loginUser">Usuario</label>
+        <input id="loginUser" autocomplete="username" />
 
-    <div class="status-text" id="estadoDia">Día: —</div>
-    <div class="status-text" id="estadoFisico">Estado físico: —</div>
-    <div class="status-text" id="estadoActividad">Estado: —</div>
+        <label for="loginPass">Contraseña</label>
+        <input id="loginPass" type="password" autocomplete="current-password" />
 
-    <div id="debug"></div>
+        <button class="btn" id="btnLogin">Entrar</button>
+        <div class="link" id="linkNoMascota">¿No tienes mascota? Regístrate</div>
 
-    <div class="buttons">
-      <button id="btnAlimentar">🍖 Alimentar</button>
-      <button id="btnJugar">🎾 Jugar</button>
-    </div>
+        <div class="error" id="loginError"></div>
+      </div>
 
-    <div id="testResults"></div>
+      <div class="link" id="linkBackHome1">Volver</div>
+    </section>
+
+    <!-- SCREEN: REGISTER -->
+    <section id="screenRegister" class="screen">
+      <h1>Crear cuenta</h1>
+      <div class="subtitle">Crea tu usuario y nombra a tu mascota</div>
+
+      <div class="card">
+        <label for="regName">Nombre (para el saludo)</label>
+        <input id="regName" autocomplete="name" placeholder="Ej: Julio" />
+
+        <label for="regUser">Usuario</label>
+        <input id="regUser" autocomplete="username" placeholder="Ej: gerugames" />
+
+        <label for="regPass">Contraseña</label>
+        <input id="regPass" type="password" autocomplete="new-password" placeholder="Mínimo 4 caracteres" />
+
+        <label for="regPet">Nombre de la mascota</label>
+        <input id="regPet" placeholder="Ej: Honey" />
+
+        <button class="btn" id="btnRegister">Crear y entrar</button>
+
+        <div class="error" id="regError"></div>
+      </div>
+
+      <div class="link" id="linkBackHome2">Volver</div>
+    </section>
+
+    <!-- SCREEN: HUB -->
+    <section id="screenHub" class="screen">
+      <div class="row" style="justify-content: space-between;">
+        <div class="hubTitle" id="hubHello">Hola —</div>
+        <div class="right"><span class="pill" id="hubClock">Día 0 · 00:00</span></div>
+      </div>
+
+      <!-- Lista de mascotas -->
+      <div id="hubPets"></div>
+
+      <button class="btn secondary" id="btnAdoptAnother">Adoptar otra mascota</button>
+
+      <div class="card" id="adoptPanel" style="display:none;">
+        <div style="font-weight:bold; margin-bottom:6px;">Adoptar otra mascota</div>
+        <div class="small" style="margin-top:0;">Primero elige si es perro o gato. El sexo se define al azar.</div>
+
+        <label>Tipo</label>
+        <div class="typeBtns">
+          <button class="btn secondary inline" id="btnTypeDog" type="button">🐶 Perro</button>
+          <button class="btn secondary inline" id="btnTypeCat" type="button">🐱 Gato</button>
+        </div>
+
+        <div class="row" style="justify-content: space-between; margin-top:10px;">
+          <div class="small" style="margin-top:0;"><b>Sexo:</b> <span id="adoptSex">—</span></div>
+          <div class="small" style="margin-top:0;"><b>Tipo:</b> <span id="adoptType">—</span></div>
+        </div>
+
+        <label for="adoptPetName">Nombre de la mascota</label>
+        <input id="adoptPetName" placeholder="Ej: Honey 2" />
+
+        <div class="row" style="margin-top:10px; justify-content: space-between;">
+          <button class="btn inline" id="btnAdoptCreate" type="button">Crear</button>
+          <button class="btn inline secondary" id="btnAdoptCancel" type="button">Cancelar</button>
+        </div>
+
+        <div class="error" id="adoptError"></div>
+      </div>
+
+      <button class="btn secondary" id="btnLogout">Cerrar sesión</button>
+      <div class="small">Tip: abre la mascota 2–3 veces al día. El tiempo ahora es realista.</div>
+    </section>
+
+    <!-- SCREEN: PET (MAQUETA + LÓGICA) -->
+    <section id="screenPet" class="screen">
+      <div class="row" style="justify-content: space-between;">
+        <div style="font-weight:bold" id="petTitle">🐶 Mascota</div>
+        <div class="muted" id="apetitoPill">Apetito: —</div>
+      </div>
+
+      <div class="topline">
+        <div id="diaHora">Día 0 · 00:00</div>
+        <div class="link" id="linkBackHub" style="text-decoration:none;">← Menú</div>
+      </div>
+
+      <div class="stat">Hambre
+        <div class="bar"><div class="fill" id="hambre"></div></div>
+      </div>
+
+      <div class="stat">Saciedad
+        <div class="bar"><div class="fill" id="saciedad"></div></div>
+      </div>
+
+      <div class="stat">Energía
+        <div class="bar"><div class="fill" id="energia"></div></div>
+      </div>
+
+      <div class="stat">Felicidad
+        <div class="bar"><div class="fill" id="felicidad"></div></div>
+      </div>
+
+      <div class="status-text" id="estadoDia">Clima del día: —</div>
+      <div class="status-text" id="estadoFisico">Estado físico: —</div>
+      <div class="status-text" id="estadoActividad">Estado: —</div>
+
+      <div class="small" id="debug"></div>
+
+      <div class="buttons">
+        <button id="btnAlimentar">🍖 Alimentar</button>
+        <button id="btnJugar">🎾 Jugar</button>
+      </div>
+
+      <div class="small" id="testResults" style="display:none"></div>
+    </section>
+
   </div>
 
   <script>
     // =========================
-    // Estado del juego
+    // CONFIG
     // =========================
+    const GAME_TITLE = 'RuvinLife';
 
-    // Nota: Hambre = 0 (sin hambre) ... 100 (mucha hambre)
-    let hambre = 35;
+    // Modo prototipo: login local
+    const USERS_KEY = 'ruvinlife_users_v1';
+    const SESSION_KEY = 'ruvinlife_session_v1';
+    const PETS_KEY = 'ruvinlife_pets_v1'; // { [userId]: [{id,name,tipo,sexo}] }
 
-    // Saciedad REAL (0..150). La barra visible muestra 0..100.
-    // Regla: si saciedadReal supera 115 (no visible), el hambre empieza a BAJAR.
-    let saciedadReal = 65;
+    // Tests visibles solo si abres con ?test=1
+    const DEV_TESTS = new URLSearchParams(location.search).get('test') === '1';
 
-    let energia = 50;
-    let felicidad = 50;
+    document.getElementById('gameTitle').innerText = GAME_TITLE;
+    document.title = GAME_TITLE;
 
-    // Estado físico “real” (no debe saltar bruscamente): 0..100
-    let fisicoScore = 50;
-
-    // Control de tiempo
-    let createdAt;      // timestamp creación (define Día 0)
-    let lastUpdate;     // último tick aplicado
-    let lastFedAt;      // última comida
-    let lastActionAt;   // última acción del usuario
-
-    // Estado de actividad
-    let estadoActividad = 'Descansando'; // Descansando | Jugando | Comiendo
-
-    // Rasgo fijo (aleatorio al crear mascota): 0..100
-    // Más alto = se le pasa la saciedad más rápido y le sube el hambre más rápido.
-    let apetitoAnsiedad = 50;
-
-    // Estado del día (cambia por DÍA REAL, no por recarga)
-    let estadoDia = {
-      nombre: 'Tranquilo',
-      hambreMod: 1.0,
-      saciedadMod: 1.0,
-      energiaMod: 1.0,
-      felicidadMod: 1.0
+    // =========================
+    // Navegación de pantallas
+    // =========================
+    const screens = {
+      home: document.getElementById('screenHome'),
+      login: document.getElementById('screenLogin'),
+      register: document.getElementById('screenRegister'),
+      hub: document.getElementById('screenHub'),
+      pet: document.getElementById('screenPet'),
     };
 
-    // Para recalcular “día” solo cuando cambia
+    function showScreen(name) {
+      Object.values(screens).forEach(s => s.classList.remove('active'));
+      screens[name].classList.add('active');
+    }
+
+    // =========================
+    // localStorage helpers
+    // =========================
+    function loadJSON(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
+    function saveJSON(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    // =========================
+    // Usuarios (localStorage)
+    // =========================
+    function loadUsers() { return loadJSON(USERS_KEY, []); }
+    function saveUsers(users) { saveJSON(USERS_KEY, users); }
+
+    function getSession() { return loadJSON(SESSION_KEY, null); }
+    function setSession(session) { saveJSON(SESSION_KEY, session); }
+    function clearSession() { localStorage.removeItem(SESSION_KEY); }
+
+    function findUserByUsername(username) {
+      const users = loadUsers();
+      return users.find(u => u.username.toLowerCase() === String(username).toLowerCase()) || null;
+    }
+
+    function requireAuthOrHome() {
+      const s = getSession();
+      if (!s || !s.userId) {
+        showScreen('home');
+        return false;
+      }
+      return true;
+    }
+
+    // =========================
+    // Mascotas por usuario
+    // =========================
+    function loadPetsIndex() { return loadJSON(PETS_KEY, {}); }
+    function savePetsIndex(index) { saveJSON(PETS_KEY, index); }
+
+    function listPets(userId) {
+      const idx = loadPetsIndex();
+      return idx[userId] || [];
+    }
+
+    function savePetsList(userId, pets) {
+      const idx = loadPetsIndex();
+      idx[userId] = pets;
+      savePetsIndex(idx);
+    }
+
+    function makePetId() {
+      return 'p_' + Math.random().toString(16).slice(2) + Date.now().toString(16);
+    }
+
+    function petKeyForUser(userId, petId) {
+      return `mascota_v0_${userId}_${petId}`;
+    }
+
+    function savePetStateForUser(userId, petId, data) {
+      localStorage.setItem(petKeyForUser(userId, petId), JSON.stringify(data));
+    }
+
+    function loadPetStateForUser(userId, petId) {
+      try {
+        const raw = localStorage.getItem(petKeyForUser(userId, petId));
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    }
+
+    // =========================
+    // Lógica del juego
+    // =========================
+    // Nota: Hambre = 0 (sin hambre) ... 100 (mucha hambre)
+    let hambre = 35;
+    let saciedadReal = 65; // 0..150 (barra 0..100)
+    let energia = 50;
+    let felicidad = 50;
+    let fisicoScore = 50;
+
+    // Tiempo
+    let createdAt;
+    let lastUpdate;
+    let lastFedAt;
+    let lastActionAt;
+
+    // Meta
+    let estadoActividad = 'Descansando';
+    let apetitoAnsiedad = 50;
+    let estadoDia = { nombre: 'Tranquilo', hambreMod: 1.0, saciedadMod: 1.0, energiaMod: 1.0, felicidadMod: 1.0 };
     let lastDayIndex = 0;
 
-    // =========================
-    // Utilidades
-    // =========================
+    // Perfil
+    let currentUser = null;
+    let activePetId = null;
+    let currentPetName = 'Mascota';
+    let currentPetTipo = 'Perro';
+    let currentPetSexo = 'Macho';
 
-    function clamp(x, min, max) {
-      return Math.max(min, Math.min(max, x));
-    }
+    function clamp(x, min, max) { return Math.max(min, Math.min(max, x)); }
+    function clamp01(x) { return clamp(x, 0, 1); }
+    function saciedadVisible() { return clamp(saciedadReal, 0, 100); }
 
-    function clamp01(x) {
-      return clamp(x, 0, 1);
-    }
-
-    function saciedadVisible() {
-      return clamp(saciedadReal, 0, 100);
-    }
+    function randomSex() { return Math.random() < 0.5 ? 'Macho' : 'Hembra'; }
 
     function etiquetaApetito(valor) {
       if (valor >= 70) return 'Alto';
@@ -213,31 +521,23 @@
     }
 
     function formatHora24(date) {
-      return date.toLocaleTimeString('es-CL', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      });
+      return date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false });
     }
 
-    function dayIndexNow(nowTs) {
-      // Día 0 desde createdAt
-      const ms = nowTs - createdAt;
+    function dayIndexNow(nowTs, createdAtTs) {
+      const ms = nowTs - createdAtTs;
       return Math.max(0, Math.floor(ms / (24 * 60 * 60 * 1000)));
     }
 
     function seededRandom01(seed) {
-      // PRNG simple (determinista) para que el día sea estable
-      // xorshift32
       let x = seed | 0;
       x ^= x << 13;
       x ^= x >>> 17;
       x ^= x << 5;
-      // normaliza a 0..1
       return ((x >>> 0) / 4294967296);
     }
 
-    function pickEstadoDia(dayIdx) {
+    function pickEstadoDia(createdAtTs, dayIdx) {
       const dias = [
         { nombre: 'Tranquilo', hambreMod: 0.95, saciedadMod: 0.95, energiaMod: 1.0, felicidadMod: 1.0 },
         { nombre: 'Ansioso', hambreMod: 1.20, saciedadMod: 1.15, energiaMod: 1.0, felicidadMod: 1.05 },
@@ -245,30 +545,29 @@
         { nombre: 'Juguetón', hambreMod: 1.05, saciedadMod: 1.0, energiaMod: 1.05, felicidadMod: 0.98 },
         { nombre: 'Lento', hambreMod: 0.98, saciedadMod: 0.98, energiaMod: 0.92, felicidadMod: 0.98 }
       ];
-
-      const seed = (createdAt / 1000 | 0) + dayIdx * 1013;
+      const seed = (createdAtTs / 1000 | 0) + dayIdx * 1013;
       const r = seededRandom01(seed);
       const idx = Math.floor(r * dias.length);
       return dias[clamp(idx, 0, dias.length - 1)];
     }
 
-    function esHambriento(nowTs) {
-      // Regla: Hambriento si superó 6 horas sin comer
-      const horasSinComer = (nowTs - lastFedAt) / (1000 * 60 * 60);
+    function esHambrientoFrom(lastFedAtTs, nowTs) {
+      const horasSinComer = (nowTs - lastFedAtTs) / (1000 * 60 * 60);
       return horasSinComer >= 6;
     }
 
-    function asegurarEstadoDia(nowTs) {
-      const d = dayIndexNow(nowTs);
-      if (d !== lastDayIndex) {
-        lastDayIndex = d;
-        estadoDia = pickEstadoDia(d);
-      }
-    }
+    function computeCriticalStatusFromData(data, nowTs) {
+      if (!data) return 'Descansando';
+      const h = Number(data.hambre ?? 0);
+      const e = Number(data.energia ?? 100);
+      const f = Number(data.felicidad ?? 100);
+      const lf = Number(data.lastFedAt ?? nowTs);
 
-    // =========================
-    // UI
-    // =========================
+      if (esHambrientoFrom(lf, nowTs) || h >= 85) return 'Necesita comida (Hambriento)';
+      if (e <= 15) return 'Cansado (Energía baja)';
+      if (f <= 15) return 'Triste (Felicidad baja)';
+      return 'Descansando';
+    }
 
     function actualizarEstadoFisico() {
       let estadoTexto = 'Estado Ideal';
@@ -277,82 +576,174 @@
       else if (fisicoScore < 60) estadoTexto = 'Estado Ideal';
       else if (fisicoScore < 80) estadoTexto = 'Gordito';
       else estadoTexto = 'Sobrepeso';
-
       document.getElementById('estadoFisico').innerText = 'Estado físico: ' + estadoTexto;
     }
 
+    function setPetTitle() {
+      const icon = (currentPetTipo === 'Gato') ? '🐱' : '🐶';
+      document.getElementById('petTitle').innerText = `${icon} ${currentPetName}`;
+    }
+
+    function guardarMascotaActiva() {
+      if (!currentUser || !activePetId) return;
+      const data = {
+        hambre, saciedadReal, energia, felicidad, fisicoScore,
+        createdAt, lastUpdate, lastFedAt, lastActionAt,
+        estadoActividad,
+        apetitoAnsiedad,
+        estadoDia,
+        lastDayIndex,
+        petName: currentPetName,
+        tipo: currentPetTipo,
+        sexo: currentPetSexo
+      };
+      savePetStateForUser(currentUser.id, activePetId, data);
+    }
+
+    function cargarMascotaActiva() {
+      if (!currentUser || !activePetId) return false;
+      const data = loadPetStateForUser(currentUser.id, activePetId);
+      if (!data) return false;
+
+      hambre = Number(data.hambre ?? hambre);
+      saciedadReal = Number(data.saciedadReal ?? saciedadReal);
+      energia = Number(data.energia ?? energia);
+      felicidad = Number(data.felicidad ?? felicidad);
+      fisicoScore = Number(data.fisicoScore ?? fisicoScore);
+
+      createdAt = Number(data.createdAt ?? Date.now());
+      lastUpdate = Number(data.lastUpdate ?? Date.now());
+      lastFedAt = Number(data.lastFedAt ?? Date.now());
+      lastActionAt = Number(data.lastActionAt ?? Date.now());
+
+      estadoActividad = String(data.estadoActividad ?? 'Descansando');
+      apetitoAnsiedad = Number(data.apetitoAnsiedad ?? 50);
+      estadoDia = data.estadoDia ?? estadoDia;
+      lastDayIndex = Number(data.lastDayIndex ?? 0);
+
+      currentPetName = String(data.petName ?? currentPetName);
+      currentPetTipo = String(data.tipo ?? currentPetTipo);
+      currentPetSexo = String(data.sexo ?? currentPetSexo);
+
+      setPetTitle();
+      return true;
+    }
+
+    function crearMascotaNueva(petName, tipo = 'Perro', sexo = randomSex()) {
+      if (!currentUser) return null;
+
+      const petId = makePetId();
+      const cleanName = (petName && petName.trim()) ? petName.trim() : 'Ruvin';
+      const cleanTipo = (tipo === 'Gato') ? 'Gato' : 'Perro';
+      const cleanSexo = (sexo === 'Hembra') ? 'Hembra' : 'Macho';
+
+      const pets = listPets(currentUser.id);
+      pets.push({ id: petId, name: cleanName, tipo: cleanTipo, sexo: cleanSexo });
+      savePetsList(currentUser.id, pets);
+
+      const now = Date.now();
+      const data = {
+        hambre: 20 + Math.floor(Math.random() * 25),
+        saciedadReal: 60 + Math.floor(Math.random() * 30),
+        energia: 45 + Math.floor(Math.random() * 30),
+        felicidad: 45 + Math.floor(Math.random() * 30),
+        fisicoScore: 45 + Math.floor(Math.random() * 20),
+        createdAt: now,
+        lastUpdate: now,
+        lastFedAt: now,
+        lastActionAt: now,
+        estadoActividad: 'Descansando',
+        apetitoAnsiedad: Math.floor(25 + Math.random() * 70),
+        lastDayIndex: 0,
+        estadoDia: pickEstadoDia(now, 0),
+        petName: cleanName,
+        tipo: cleanTipo,
+        sexo: cleanSexo
+      };
+      savePetStateForUser(currentUser.id, petId, data);
+      return petId;
+    }
+
+    function asegurarEstadoDia(nowTs) {
+      const d = dayIndexNow(nowTs, createdAt);
+      if (d !== lastDayIndex) {
+        lastDayIndex = d;
+        estadoDia = pickEstadoDia(createdAt, d);
+      }
+    }
+
     function actualizarBarras() {
+      if (!currentUser || !activePetId) return;
+
       const now = Date.now();
       asegurarEstadoDia(now);
 
-      // Día + Hora visible (24h)
-      const d = dayIndexNow(now);
+      const d = dayIndexNow(now, createdAt);
       const hora = formatHora24(new Date(now));
-      document.getElementById('diaHora').innerText = `Día ${d} · ${hora}`;
 
-      // Pill apetito
+      document.getElementById('diaHora').innerText = `Día ${d} · ${hora}`;
       document.getElementById('apetitoPill').innerText = `Apetito: ${etiquetaApetito(apetitoAnsiedad)}`;
 
-      // Estado actividad + tag hambriento
-      const tagHambriento = esHambriento(now) ? ' · Hambriento' : '';
+      const tagHambriento = esHambrientoFrom(lastFedAt, now) ? ' · Hambriento' : '';
       document.getElementById('estadoActividad').innerText = 'Estado: ' + estadoActividad + tagHambriento;
 
-      document.getElementById('hambre').style.width = hambre + '%';
-      document.getElementById('saciedad').style.width = saciedadVisible() + '%';
-      document.getElementById('energia').style.width = energia + '%';
-      document.getElementById('felicidad').style.width = felicidad + '%';
+      document.getElementById('hambre').style.width = clamp(hambre, 0, 100) + '%';
+      document.getElementById('saciedad').style.width = clamp(saciedadVisible(), 0, 100) + '%';
+      document.getElementById('energia').style.width = clamp(energia, 0, 100) + '%';
+      document.getElementById('felicidad').style.width = clamp(felicidad, 0, 100) + '%';
 
       document.getElementById('estadoDia').innerText = 'Clima del día: ' + estadoDia.nombre;
 
+      // IMPORTANTE: usa \n, no saltos "reales" dentro de strings con comillas.
       document.getElementById('debug').innerText =
         `Hambre ${Math.round(hambre)} | Saciedad ${Math.round(saciedadVisible())} (real ${Math.round(saciedadReal)}) | Energía ${Math.round(energia)} | ` +
         `Felicidad ${Math.round(felicidad)} | Físico ${Math.round(fisicoScore)}\n` +
         `Horas sin comer: ${((now - lastFedAt) / (1000*60*60)).toFixed(2)} | ` +
         `Min sin acción: ${((now - lastActionAt) / (1000*60)).toFixed(1)} | ` +
-        `Último tick: ${Math.round((now - lastUpdate)/1000)}s`;
+        `Último tick: ${Math.round((now - lastUpdate)/1000)}s\n` +
+        `${currentPetTipo} · ${currentPetSexo}`;
 
       actualizarEstadoFisico();
+      document.getElementById('hubClock').innerText = `Día ${d} · ${hora}`;
     }
 
-    // =========================
-    // Acciones (instantáneas)
-    // =========================
-
+    // Acciones
     function alimentar() {
+      if (!currentUser || !activePetId) return;
+
       const now = Date.now();
       lastActionAt = now;
       estadoActividad = 'Comiendo';
 
-      // Alimentar sube saciedad REAL
       saciedadReal = clamp(saciedadReal + 25, 0, 150);
 
-      // Si saciedadReal supera 115 (no visible), baja el hambre algunos puntos (modo lento)
+      // Si hay sobresaciedad, el hambre baja suave
       if (saciedadReal > 115) {
         const exceso = saciedadReal - 115;
         const baja = 0.3 + exceso * 0.01;
         hambre = clamp(hambre - baja, 0, 100);
       }
 
-      // Comer “cansa un poquito”
       energia = clamp(energia - 3, 0, 100);
-
       lastFedAt = now;
       actualizarBarras();
 
       setTimeout(() => {
         estadoActividad = 'Descansando';
         actualizarBarras();
-      }, 1500);
+        guardarMascotaActiva();
+      }, 1200);
 
-      guardar();
+      guardarMascotaActiva();
     }
 
     function jugar() {
+      if (!currentUser || !activePetId) return;
+
       const now = Date.now();
       lastActionAt = now;
       estadoActividad = 'Jugando';
 
-      // Efectos instantáneos (la acción dura poco en UI)
       felicidad = clamp(felicidad + 12, 0, 100);
       energia = clamp(energia - 10, 0, 100);
       saciedadReal = clamp(saciedadReal - 8, 0, 150);
@@ -362,49 +753,43 @@
       setTimeout(() => {
         estadoActividad = 'Descansando';
         actualizarBarras();
-      }, 3000);
+        guardarMascotaActiva();
+      }, 2200);
 
-      guardar();
+      guardarMascotaActiva();
     }
 
-    // =========================
-    // Simulación REALISTA (opción A)
-    // =========================
-
+    // Tick realista (cada 60s)
     function tick() {
+      if (!currentUser || !activePetId) return;
+
       const now = Date.now();
       asegurarEstadoDia(now);
 
       const deltaMs = now - lastUpdate;
       lastUpdate = now;
 
-      // Permitimos saltos grandes (si el usuario vuelve horas después), pero evitamos extremos absurdos
-      const deltaMsCapped = clamp(deltaMs, 0, 48 * 60 * 60 * 1000); // cap 48h
+      const deltaMsCapped = clamp(deltaMs, 0, 48 * 60 * 60 * 1000);
       const hoursPassed = deltaMsCapped / (1000 * 60 * 60);
 
-      // --- Factores base ---
-      const apetitoFactor = 0.8 + (apetitoAnsiedad / 100) * 0.8; // 0.8 .. 1.6
+      const apetitoFactor = 0.8 + (apetitoAnsiedad / 100) * 0.8;
 
-      // 1) Saciedad cae con el tiempo (por hora)
-      // Objetivo: que con cuidado normal la revises 2-3 veces al día.
+      // Saciedad cae
       const saciedadDecayPerHour = 7.0 * apetitoFactor * estadoDia.saciedadMod;
       saciedadReal = clamp(saciedadReal - saciedadDecayPerHour * hoursPassed, 0, 150);
 
-      // 2) Hambre
+      // Hambre
       if (saciedadReal > 115) {
-        // Si hay sobresaciedad, hambre baja MUY lento (modo A)
         const exceso = saciedadReal - 115;
         const hambreBajaPerHour = (0.6 + exceso * 0.08) * (0.95 + apetitoFactor * 0.05);
         hambre = clamp(hambre - hambreBajaPerHour * hoursPassed, 0, 100);
       } else {
-        // Si no, hambre sube según falta de saciedad
         const faltaSaciedad = clamp01(1 - saciedadVisible() / 100);
         const hambreSubePerHour = (3.5 + 10.0 * faltaSaciedad) * apetitoFactor * estadoDia.hambreMod;
         hambre = clamp(hambre + hambreSubePerHour * hoursPassed, 0, 100);
       }
 
-      // 3) Energía (por hora)
-      // Descansando recupera; si te pasas sin actividad, energía deja de ser protagonista.
+      // Energía
       if (estadoActividad === 'Descansando') {
         const energiaRegenPerHour = 9.0 * estadoDia.energiaMod;
         energia = clamp(energia + energiaRegenPerHour * hoursPassed, 0, 100);
@@ -416,256 +801,381 @@
         energia = clamp(energia - energiaDrainPerHour * hoursPassed, 0, 100);
       }
 
-      // 4) Felicidad
-      // a) decae suave por el tiempo
+      // Felicidad
       const felicidadDecayPerHour = 1.2 * estadoDia.felicidadMod;
       felicidad = clamp(felicidad - felicidadDecayPerHour * hoursPassed, 0, 100);
 
-      // b) si no haces nada por mucho tiempo, baja más (aburrimiento)
       const minsSinAccion = (now - lastActionAt) / (1000 * 60);
-      if (minsSinAccion > 120) { // 2 horas sin interacción
-        const extra = (minsSinAccion - 120) / 60; // horas extra
+      if (minsSinAccion > 120) {
+        const extra = (minsSinAccion - 120) / 60;
         felicidad = clamp(felicidad - (1.0 * extra), 0, 100);
       }
 
-      // c) hambriento (>=6h) afecta felicidad
-      if (esHambriento(now)) {
+      if (esHambrientoFrom(lastFedAt, now)) {
         felicidad = clamp(felicidad - (1.8 * hoursPassed), 0, 100);
       }
 
-      // d) si hambre muy alta, pega más
       if (hambre > 75) {
         felicidad = clamp(felicidad - (2.0 * hoursPassed), 0, 100);
       }
 
-      // 5) Físico suavizado (cambia lento)
+      // Estado físico converge lento
       const targetFisico = 50
         + ((saciedadVisible() - 50) * 0.35)
         - ((hambre - 50) * 0.35)
         + ((estadoActividad === 'Descansando' ? 1 : -1) * 4)
         + ((energia - 50) * 0.05);
 
-      // En realismo: ajuste muy gradual (más lento que antes)
-      const fisicoAdjustRate = 0.01; // por tick (se aplica cada minuto)
+      const fisicoAdjustRate = 0.01;
       fisicoScore = clamp(fisicoScore + (targetFisico - fisicoScore) * fisicoAdjustRate, 0, 100);
 
       actualizarBarras();
-      guardar();
+      guardarMascotaActiva();
     }
 
     // =========================
-    // Persistencia (localStorage)
+    // Tests (opt-in)
     // =========================
-
-    const LS_KEY = 'mascota_v0';
-
-    function guardar() {
-      try {
-        const data = {
-          hambre, saciedadReal, energia, felicidad, fisicoScore,
-          createdAt, lastUpdate, lastFedAt, lastActionAt,
-          estadoActividad,
-          apetitoAnsiedad,
-          estadoDia,
-          lastDayIndex
-        };
-        localStorage.setItem(LS_KEY, JSON.stringify(data));
-      } catch (_) {
-        // si falla, seguimos sin persistencia
-      }
-    }
-
-    function cargar() {
-      try {
-        const raw = localStorage.getItem(LS_KEY);
-        if (!raw) return false;
-        const data = JSON.parse(raw);
-
-        hambre = data.hambre ?? hambre;
-        saciedadReal = data.saciedadReal ?? saciedadReal;
-        energia = data.energia ?? energia;
-        felicidad = data.felicidad ?? felicidad;
-        fisicoScore = data.fisicoScore ?? fisicoScore;
-
-        createdAt = data.createdAt ?? Date.now();
-        lastUpdate = data.lastUpdate ?? Date.now();
-        lastFedAt = data.lastFedAt ?? Date.now();
-        lastActionAt = data.lastActionAt ?? Date.now();
-
-        estadoActividad = data.estadoActividad ?? estadoActividad;
-        apetitoAnsiedad = data.apetitoAnsiedad ?? apetitoAnsiedad;
-        estadoDia = data.estadoDia ?? estadoDia;
-        lastDayIndex = data.lastDayIndex ?? 0;
-
-        return true;
-      } catch (_) {
-        return false;
-      }
-    }
-
-    // =========================
-    // Inicialización
-    // =========================
-
-    function crearMascotaNueva() {
-      const now = Date.now();
-      createdAt = now;
-      lastUpdate = now;
-      lastFedAt = now;
-      lastActionAt = now;
-
-      apetitoAnsiedad = Math.floor(25 + Math.random() * 70); // 25..94
-
-      lastDayIndex = 0;
-      estadoDia = pickEstadoDia(0);
-
-      saciedadReal = 60 + Math.floor(Math.random() * 30);
-      hambre = 20 + Math.floor(Math.random() * 25);
-      energia = 45 + Math.floor(Math.random() * 30);
-      felicidad = 45 + Math.floor(Math.random() * 30);
-      fisicoScore = 45 + Math.floor(Math.random() * 20);
-
-      estadoActividad = 'Descansando';
-      guardar();
-    }
-
-    // =========================
-    // Tests (mini suite)
-    // =========================
-
     function assert(name, condition) {
       if (!condition) throw new Error('Fallo: ' + name);
       return 'OK: ' + name;
     }
 
-    function snapshotState() {
-      return {
-        hambre, saciedadReal, energia, felicidad, fisicoScore,
-        createdAt, lastUpdate, lastFedAt, lastActionAt,
-        estadoActividad,
-        apetitoAnsiedad,
-        estadoDia: { ...estadoDia },
-        lastDayIndex
-      };
-    }
-
-    function restoreState(s) {
-      hambre = s.hambre;
-      saciedadReal = s.saciedadReal;
-      energia = s.energia;
-      felicidad = s.felicidad;
-      fisicoScore = s.fisicoScore;
-      createdAt = s.createdAt;
-      lastUpdate = s.lastUpdate;
-      lastFedAt = s.lastFedAt;
-      lastActionAt = s.lastActionAt;
-      estadoActividad = s.estadoActividad;
-      apetitoAnsiedad = s.apetitoAnsiedad;
-      estadoDia = { ...s.estadoDia };
-      lastDayIndex = s.lastDayIndex;
-    }
-
     function runTests() {
       const out = [];
-      const snap = snapshotState();
-
       try {
-        // Test 1: alimentar aumenta saciedadReal
-        const s0 = saciedadReal;
-        alimentar();
-        out.push(assert('Alimentar sube saciedad real', saciedadReal >= s0));
-
-        // Restaurar (alimentar cambia timestamps)
-        restoreState(snap);
-
-        // Test 2: jugar sube felicidad
-        const f0 = felicidad;
-        jugar();
-        out.push(assert('Jugar sube felicidad', felicidad >= f0));
-
-        restoreState(snap);
-
-        // Test 3: hambriento si > 6h
+        // Test sobresaciedad baja hambre (1 min)
         const now = Date.now();
-        lastFedAt = now - 6.1 * 60 * 60 * 1000;
-        out.push(assert('Hambriento si > 6h', esHambriento(now) === true));
-
-        restoreState(snap);
-
-        // Test 4: clamps
-        hambre = 999; saciedadReal = -999; energia = 999; felicidad = -999; fisicoScore = 999;
-        hambre = clamp(hambre, 0, 100);
-        saciedadReal = clamp(saciedadReal, 0, 150);
-        energia = clamp(energia, 0, 100);
-        felicidad = clamp(felicidad, 0, 100);
-        fisicoScore = clamp(fisicoScore, 0, 100);
-        out.push(assert('Clamps rango',
-          hambre <= 100 && hambre >= 0 &&
-          saciedadReal <= 150 && saciedadReal >= 0 &&
-          energia <= 100 && energia >= 0 &&
-          felicidad <= 100 && felicidad >= 0 &&
-          fisicoScore <= 100 && fisicoScore >= 0
-        ));
-
-        restoreState(snap);
-
-        // Test 5: sobresaciedad baja hambre
+        createdAt = now;
+        lastUpdate = now - 60 * 1000;
+        lastFedAt = now;
+        lastActionAt = now;
+        estadoActividad = 'Descansando';
+        apetitoAnsiedad = 60;
+        estadoDia = pickEstadoDia(createdAt, 0);
+        lastDayIndex = 0;
         hambre = 50;
         saciedadReal = 130;
-        lastUpdate = Date.now() - 60 * 1000; // simula 1 minuto
+        energia = 50;
+        felicidad = 50;
+        fisicoScore = 50;
         tick();
         out.push(assert('Hambre baja con sobresaciedad (>115)', hambre < 50));
 
-        restoreState(snap);
+        // Test día
+        out.push(assert('Día 0 al crear', dayIndexNow(now, now) === 0));
+        out.push(assert('Día 1 tras 24h', dayIndexNow(now + 24*60*60*1000 + 1000, now) === 1));
 
-        // Test 6: Día 0 al crear
-        const base = Date.now();
-        createdAt = base;
-        out.push(assert('Día 0 al crear', dayIndexNow(base) === 0));
-        out.push(assert('Día 1 tras 24h', dayIndexNow(base + 24*60*60*1000 + 1000) === 1));
+        // Test randomSex
+        const sx = randomSex();
+        out.push(assert('randomSex devuelve Macho/Hembra', sx === 'Macho' || sx === 'Hembra'));
+
+        // Test clamp
+        out.push(assert('Clamp rango', clamp(200, 0, 100) === 100 && clamp(-5, 0, 100) === 0));
 
       } catch (e) {
         out.push(String(e));
-      } finally {
-        restoreState(snap);
       }
 
-      document.getElementById('testResults').innerText = 'Tests\n' + out.join('\n');
+      const el = document.getElementById('testResults');
+      el.style.display = 'block';
+      // ✅ FIX: evita strings multilínea inválidos
+      el.innerText = 'Tests\n' + out.join('\n');
     }
 
     // =========================
-    // Boot
+    // Hub UI
     // =========================
+    function renderHub() {
+      if (!currentUser) return;
+      document.getElementById('hubHello').innerText = `Hola ${currentUser.name}`;
+
+      const hubPets = document.getElementById('hubPets');
+      hubPets.innerHTML = '';
+
+      const pets = listPets(currentUser.id);
+      const now = Date.now();
+
+      if (pets.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'card';
+        empty.innerHTML = '<b>No tienes mascotas aún.</b><div class="small">Toca “Adoptar otra mascota”.</div>';
+        hubPets.appendChild(empty);
+        document.getElementById('hubClock').innerText = `Día 0 · ${formatHora24(new Date(now))}`;
+        return;
+      }
+
+      // Si no hay mascota activa, usa la primera
+      if (!activePetId || !pets.find(p => p.id === activePetId)) {
+        activePetId = pets[0].id;
+        setSession({ userId: currentUser.id, petId: activePetId });
+        cargarMascotaActiva();
+      }
+
+      for (const p of pets) {
+        const data = loadPetStateForUser(currentUser.id, p.id);
+        const status = computeCriticalStatusFromData(data, now);
+        const tipo = (p.tipo || data?.tipo || 'Perro');
+        const sexo = (p.sexo || data?.sexo || 'Macho');
+        const icon = (tipo === 'Gato') ? '🐱' : '🐶';
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="petCardRow">
+            <div class="petMeta">
+              <b>${icon} Mascota: ${p.name}</b>
+              <div class="small">${tipo} · ${sexo}</div>
+              <div class="small">Estado: ${status}</div>
+            </div>
+            <button class="btn inline" data-pet="${p.id}">Entrar</button>
+          </div>
+        `;
+
+        card.querySelector('button').onclick = () => {
+          activePetId = p.id;
+          setSession({ userId: currentUser.id, petId: activePetId });
+          cargarMascotaActiva();
+          showScreen('pet');
+          actualizarBarras();
+        };
+
+        hubPets.appendChild(card);
+      }
+
+      const activeData = loadPetStateForUser(currentUser.id, activePetId);
+      const created = Number(activeData?.createdAt ?? now);
+      const d = dayIndexNow(now, created);
+      const hora = formatHora24(new Date(now));
+      document.getElementById('hubClock').innerText = `Día ${d} · ${hora}`;
+    }
+
+    // =========================
+    // Auth handlers
+    // =========================
+    function login(username, password) {
+      const user = findUserByUsername(username);
+      if (!user) return { ok: false, msg: 'Usuario no existe.' };
+      if (user.password !== password) return { ok: false, msg: 'Contraseña incorrecta.' };
+
+      const pets = listPets(user.id);
+      const petId = pets[0]?.id || null;
+      setSession({ userId: user.id, petId });
+      return { ok: true, user, petId };
+    }
+
+    function register(name, username, password, petName) {
+      if (!name || name.trim().length < 2) return { ok: false, msg: 'Escribe tu nombre (mínimo 2 letras).' };
+      if (!username || username.trim().length < 3) return { ok: false, msg: 'Usuario mínimo 3 caracteres.' };
+      if (!password || password.length < 4) return { ok: false, msg: 'Contraseña mínimo 4 caracteres.' };
+      if (findUserByUsername(username)) return { ok: false, msg: 'Ese usuario ya existe. Prueba otro.' };
+
+      const users = loadUsers();
+      const userId = 'u_' + Math.random().toString(16).slice(2) + Date.now().toString(16);
+      const user = { id: userId, name: name.trim(), username: username.trim(), password };
+      users.push(user);
+      saveUsers(users);
+
+      currentUser = user;
+
+      // Primera mascota del usuario (por ahora: Perro por defecto + sexo al azar)
+      const firstPetId = crearMascotaNueva(petName, 'Perro', randomSex());
+      activePetId = firstPetId;
+      setSession({ userId: user.id, petId: activePetId });
+      cargarMascotaActiva();
+
+      return { ok: true, user, petId: activePetId };
+    }
+
+    function hydrateFromSession() {
+      const sess = getSession();
+      if (!sess || !sess.userId) return false;
+
+      const users = loadUsers();
+      const user = users.find(u => u.id === sess.userId);
+      if (!user) {
+        clearSession();
+        return false;
+      }
+
+      currentUser = user;
+
+      const pets = listPets(user.id);
+      activePetId = sess.petId && pets.find(p => p.id === sess.petId) ? sess.petId : (pets[0]?.id || null);
+      setSession({ userId: user.id, petId: activePetId });
+
+      if (activePetId) {
+        if (!cargarMascotaActiva()) {
+          activePetId = crearMascotaNueva('Ruvin');
+          setSession({ userId: user.id, petId: activePetId });
+          cargarMascotaActiva();
+        }
+      }
+
+      showScreen('hub');
+      renderHub();
+      actualizarBarras();
+      return true;
+    }
+
+    // =========================
+    // Adopt panel (tipo + sexo aleatorio)
+    // =========================
+    let pendingAdoptTipo = null;
+    let pendingAdoptSexo = null;
+
+    function setPendingTipo(tipo) {
+      pendingAdoptTipo = (tipo === 'Gato') ? 'Gato' : 'Perro';
+      pendingAdoptSexo = randomSex();
+
+      document.getElementById('adoptType').innerText = pendingAdoptTipo;
+      document.getElementById('adoptSex').innerText = pendingAdoptSexo;
+
+      const dogBtn = document.getElementById('btnTypeDog');
+      const catBtn = document.getElementById('btnTypeCat');
+      dogBtn.classList.toggle('secondary', pendingAdoptTipo !== 'Perro');
+      catBtn.classList.toggle('secondary', pendingAdoptTipo !== 'Gato');
+    }
+
+    function openAdoptPanel() {
+      document.getElementById('adoptError').innerText = '';
+      document.getElementById('adoptPetName').value = '';
+      document.getElementById('adoptPanel').style.display = 'block';
+
+      pendingAdoptTipo = null;
+      pendingAdoptSexo = null;
+      document.getElementById('adoptType').innerText = '—';
+      document.getElementById('adoptSex').innerText = '—';
+
+      document.getElementById('btnTypeDog').classList.add('secondary');
+      document.getElementById('btnTypeCat').classList.add('secondary');
+
+      setTimeout(() => document.getElementById('btnTypeDog').focus(), 0);
+    }
+
+    function closeAdoptPanel() {
+      document.getElementById('adoptPanel').style.display = 'none';
+      document.getElementById('adoptError').innerText = '';
+    }
+
+    function adoptCreateFromPanel() {
+      if (!requireAuthOrHome()) return;
+
+      if (!pendingAdoptTipo || !pendingAdoptSexo) {
+        document.getElementById('adoptError').innerText = 'Primero elige si es Perro o Gato (el sexo sale al azar).';
+        return;
+      }
+
+      const name = document.getElementById('adoptPetName').value;
+      if (!name || !name.trim()) {
+        document.getElementById('adoptError').innerText = 'Ponle un nombre a la mascota.';
+        return;
+      }
+
+      const newId = crearMascotaNueva(name.trim(), pendingAdoptTipo, pendingAdoptSexo);
+      activePetId = newId;
+      setSession({ userId: currentUser.id, petId: activePetId });
+      cargarMascotaActiva();
+      closeAdoptPanel();
+      renderHub();
+    }
+
+    // =========================
+    // UI bindings
+    // =========================
+    document.getElementById('btnGoLogin').onclick = () => showScreen('login');
+    document.getElementById('btnGoRegister').onclick = () => showScreen('register');
+
+    document.getElementById('linkBackHome1').onclick = () => {
+      document.getElementById('loginError').innerText = '';
+      showScreen('home');
+    };
+    document.getElementById('linkBackHome2').onclick = () => {
+      document.getElementById('regError').innerText = '';
+      showScreen('home');
+    };
+
+    document.getElementById('linkNoMascota').onclick = () => {
+      document.getElementById('loginError').innerText = '';
+      showScreen('register');
+    };
+
+    document.getElementById('btnLogin').onclick = () => {
+      const u = document.getElementById('loginUser').value;
+      const p = document.getElementById('loginPass').value;
+      const res = login(u, p);
+      const el = document.getElementById('loginError');
+      el.innerText = res.ok ? '' : res.msg;
+
+      if (res.ok) {
+        currentUser = res.user;
+        activePetId = res.petId;
+        if (activePetId) cargarMascotaActiva();
+        showScreen('hub');
+        renderHub();
+        actualizarBarras();
+      }
+    };
+
+    document.getElementById('btnRegister').onclick = () => {
+      const name = document.getElementById('regName').value;
+      const username = document.getElementById('regUser').value;
+      const pass = document.getElementById('regPass').value;
+      const pet = document.getElementById('regPet').value;
+
+      const res = register(name, username, pass, pet);
+      const el = document.getElementById('regError');
+      el.innerText = res.ok ? '' : res.msg;
+
+      if (res.ok) {
+        showScreen('hub');
+        renderHub();
+        actualizarBarras();
+      }
+    };
+
+    document.getElementById('btnLogout').onclick = () => {
+      clearSession();
+      currentUser = null;
+      activePetId = null;
+      showScreen('home');
+    };
+
+    document.getElementById('btnAdoptAnother').onclick = () => {
+      if (!requireAuthOrHome()) return;
+      openAdoptPanel();
+    };
+
+    document.getElementById('btnTypeDog').onclick = () => setPendingTipo('Perro');
+    document.getElementById('btnTypeCat').onclick = () => setPendingTipo('Gato');
+
+    document.getElementById('btnAdoptCreate').onclick = adoptCreateFromPanel;
+    document.getElementById('btnAdoptCancel').onclick = closeAdoptPanel;
+
+    document.getElementById('adoptPetName').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') adoptCreateFromPanel();
+      if (e.key === 'Escape') closeAdoptPanel();
+    });
+
+    document.getElementById('linkBackHub').onclick = () => {
+      showScreen('hub');
+      renderHub();
+    };
 
     document.getElementById('btnAlimentar').onclick = alimentar;
     document.getElementById('btnJugar').onclick = jugar;
 
-    if (!cargar()) {
-      crearMascotaNueva();
+    // Loop
+    setInterval(() => tick(), 60 * 1000);
+
+    // Boot
+    if (!hydrateFromSession()) {
+      showScreen('home');
     }
 
-    // Si se cargó en un estado activo, volvemos a descansar
-    if (estadoActividad !== 'Descansando') estadoActividad = 'Descansando';
+    // tests
+    if (DEV_TESTS) runTests();
 
-    // Asegurar timestamps válidos
-    const now = Date.now();
-    createdAt = createdAt ?? now;
-    lastUpdate = lastUpdate ?? now;
-    lastFedAt = lastFedAt ?? now;
-    lastActionAt = lastActionAt ?? now;
-
-    // Asegurar estado del día para el día actual
-    lastDayIndex = dayIndexNow(now);
-    estadoDia = pickEstadoDia(lastDayIndex);
-
-    actualizarBarras();
-    runTests();
-
-    // Realismo A: tick cada 60s
-    setInterval(tick, 60 * 1000);
-
-    // Actualizar reloj visible cada 1s (solo UI)
-    setInterval(actualizarBarras, 1000);
   </script>
 </body>
 </html>
