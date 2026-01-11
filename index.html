@@ -17,14 +17,29 @@
 
     .game {
       background: white;
-      width: 320px;
-      padding: 20px;
+      width: 340px;
+      padding: 18px;
       border-radius: 12px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
       text-align: center;
     }
 
-    h1 { margin-top: 0; }
+    h1 { margin: 0 0 8px 0; }
+
+    .topline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #222;
+    }
+
+    .topline .muted {
+      font-weight: normal;
+      color: #666;
+      font-size: 12px;
+    }
 
     .stat {
       margin: 10px 0;
@@ -82,11 +97,25 @@
       text-align: left;
       white-space: pre-wrap;
     }
+
+    .pill {
+      display: inline-block;
+      background: #f1f1f1;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      color: #444;
+    }
   </style>
 </head>
 <body>
   <div class="game">
     <h1>🐶 Mascota Virtual</h1>
+
+    <div class="topline">
+      <div id="diaHora">Día 0 · 00:00</div>
+      <div class="muted" id="apetitoPill">Apetito: —</div>
+    </div>
 
     <div class="stat">Hambre
       <div class="bar"><div class="fill" id="hambre"></div></div>
@@ -127,21 +156,20 @@
     let hambre = 35;
 
     // Saciedad REAL (0..150). La barra visible muestra 0..100.
-    // Regla pedida: si saciedadReal supera 115 (no visible), el hambre debe empezar a BAJAR.
+    // Regla: si saciedadReal supera 115 (no visible), el hambre empieza a BAJAR.
     let saciedadReal = 65;
 
     let energia = 50;
     let felicidad = 50;
 
     // Estado físico “real” (no debe saltar bruscamente): 0..100
-    // 40-59 = Ideal; <40 más delgado; >60 más gordito.
     let fisicoScore = 50;
 
     // Control de tiempo
-    let createdAt;
-    let lastUpdate;
-    let lastFedAt;
-    let lastActionAt; // última vez que el usuario hizo algo (alimentar/jugar)
+    let createdAt;      // timestamp creación (define Día 0)
+    let lastUpdate;     // último tick aplicado
+    let lastFedAt;      // última comida
+    let lastActionAt;   // última acción del usuario
 
     // Estado de actividad
     let estadoActividad = 'Descansando'; // Descansando | Jugando | Comiendo
@@ -150,14 +178,17 @@
     // Más alto = se le pasa la saciedad más rápido y le sube el hambre más rápido.
     let apetitoAnsiedad = 50;
 
-    // Estado del día (por ahora cambia al recargar)
+    // Estado del día (cambia por DÍA REAL, no por recarga)
     let estadoDia = {
       nombre: 'Tranquilo',
-      hambreMod: 0.9,
-      saciedadMod: 0.9,
+      hambreMod: 1.0,
+      saciedadMod: 1.0,
       energiaMod: 1.0,
       felicidadMod: 1.0
     };
+
+    // Para recalcular “día” solo cuando cambia
+    let lastDayIndex = 0;
 
     // =========================
     // Utilidades
@@ -181,10 +212,58 @@
       return 'Bajo';
     }
 
-    function esHambriento() {
+    function formatHora24(date) {
+      return date.toLocaleTimeString('es-CL', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    }
+
+    function dayIndexNow(nowTs) {
+      // Día 0 desde createdAt
+      const ms = nowTs - createdAt;
+      return Math.max(0, Math.floor(ms / (24 * 60 * 60 * 1000)));
+    }
+
+    function seededRandom01(seed) {
+      // PRNG simple (determinista) para que el día sea estable
+      // xorshift32
+      let x = seed | 0;
+      x ^= x << 13;
+      x ^= x >>> 17;
+      x ^= x << 5;
+      // normaliza a 0..1
+      return ((x >>> 0) / 4294967296);
+    }
+
+    function pickEstadoDia(dayIdx) {
+      const dias = [
+        { nombre: 'Tranquilo', hambreMod: 0.95, saciedadMod: 0.95, energiaMod: 1.0, felicidadMod: 1.0 },
+        { nombre: 'Ansioso', hambreMod: 1.20, saciedadMod: 1.15, energiaMod: 1.0, felicidadMod: 1.05 },
+        { nombre: 'Frío', hambreMod: 1.10, saciedadMod: 1.05, energiaMod: 0.95, felicidadMod: 1.0 },
+        { nombre: 'Juguetón', hambreMod: 1.05, saciedadMod: 1.0, energiaMod: 1.05, felicidadMod: 0.98 },
+        { nombre: 'Lento', hambreMod: 0.98, saciedadMod: 0.98, energiaMod: 0.92, felicidadMod: 0.98 }
+      ];
+
+      const seed = (createdAt / 1000 | 0) + dayIdx * 1013;
+      const r = seededRandom01(seed);
+      const idx = Math.floor(r * dias.length);
+      return dias[clamp(idx, 0, dias.length - 1)];
+    }
+
+    function esHambriento(nowTs) {
       // Regla: Hambriento si superó 6 horas sin comer
-      const horasSinComer = (Date.now() - lastFedAt) / (1000 * 60 * 60);
+      const horasSinComer = (nowTs - lastFedAt) / (1000 * 60 * 60);
       return horasSinComer >= 6;
+    }
+
+    function asegurarEstadoDia(nowTs) {
+      const d = dayIndexNow(nowTs);
+      if (d !== lastDayIndex) {
+        lastDayIndex = d;
+        estadoDia = pickEstadoDia(d);
+      }
     }
 
     // =========================
@@ -203,7 +282,19 @@
     }
 
     function actualizarBarras() {
-      const tagHambriento = esHambriento() ? ' · Hambriento' : '';
+      const now = Date.now();
+      asegurarEstadoDia(now);
+
+      // Día + Hora visible (24h)
+      const d = dayIndexNow(now);
+      const hora = formatHora24(new Date(now));
+      document.getElementById('diaHora').innerText = `Día ${d} · ${hora}`;
+
+      // Pill apetito
+      document.getElementById('apetitoPill').innerText = `Apetito: ${etiquetaApetito(apetitoAnsiedad)}`;
+
+      // Estado actividad + tag hambriento
+      const tagHambriento = esHambriento(now) ? ' · Hambriento' : '';
       document.getElementById('estadoActividad').innerText = 'Estado: ' + estadoActividad + tagHambriento;
 
       document.getElementById('hambre').style.width = hambre + '%';
@@ -211,138 +302,152 @@
       document.getElementById('energia').style.width = energia + '%';
       document.getElementById('felicidad').style.width = felicidad + '%';
 
-      document.getElementById('estadoDia').innerText = 'Día: ' + estadoDia.nombre + ' · Apetito: ' + etiquetaApetito(apetitoAnsiedad);
+      document.getElementById('estadoDia').innerText = 'Clima del día: ' + estadoDia.nombre;
 
       document.getElementById('debug').innerText =
         `Hambre ${Math.round(hambre)} | Saciedad ${Math.round(saciedadVisible())} (real ${Math.round(saciedadReal)}) | Energía ${Math.round(energia)} | ` +
         `Felicidad ${Math.round(felicidad)} | Físico ${Math.round(fisicoScore)}\n` +
-        `Horas sin comer: ${((Date.now() - lastFedAt) / (1000*60*60)).toFixed(2)} | ` +
-        `Min sin acción: ${((Date.now() - lastActionAt) / (1000*60)).toFixed(1)}`;
+        `Horas sin comer: ${((now - lastFedAt) / (1000*60*60)).toFixed(2)} | ` +
+        `Min sin acción: ${((now - lastActionAt) / (1000*60)).toFixed(1)} | ` +
+        `Último tick: ${Math.round((now - lastUpdate)/1000)}s`;
 
       actualizarEstadoFisico();
     }
 
     // =========================
-    // Acciones
+    // Acciones (instantáneas)
     // =========================
 
     function alimentar() {
-      lastActionAt = Date.now();
+      const now = Date.now();
+      lastActionAt = now;
       estadoActividad = 'Comiendo';
 
+      // Alimentar sube saciedad REAL
       saciedadReal = clamp(saciedadReal + 25, 0, 150);
 
-      // Si saciedadReal supera 115 (no visible), baja el hambre algunos puntos
+      // Si saciedadReal supera 115 (no visible), baja el hambre algunos puntos (modo lento)
       if (saciedadReal > 115) {
         const exceso = saciedadReal - 115;
-        // Modo 1 (lento): baja suave, se nota con el tiempo
-        const baja = 0.3 + exceso * 0.01; // ajustable (suave)
+        const baja = 0.3 + exceso * 0.01;
         hambre = clamp(hambre - baja, 0, 100);
       }
 
-      energia = clamp(energia - 5, 0, 100);
-      lastFedAt = Date.now();
+      // Comer “cansa un poquito”
+      energia = clamp(energia - 3, 0, 100);
 
+      lastFedAt = now;
       actualizarBarras();
 
       setTimeout(() => {
         estadoActividad = 'Descansando';
         actualizarBarras();
-      }, 2000);
+      }, 1500);
 
       guardar();
     }
 
     function jugar() {
-      lastActionAt = Date.now();
+      const now = Date.now();
+      lastActionAt = now;
       estadoActividad = 'Jugando';
 
-      felicidad = clamp(felicidad + 15, 0, 100);
-      energia = clamp(energia - 15, 0, 100);
-      saciedadReal = clamp(saciedadReal - 12, 0, 150);
+      // Efectos instantáneos (la acción dura poco en UI)
+      felicidad = clamp(felicidad + 12, 0, 100);
+      energia = clamp(energia - 10, 0, 100);
+      saciedadReal = clamp(saciedadReal - 8, 0, 150);
 
       actualizarBarras();
 
       setTimeout(() => {
         estadoActividad = 'Descansando';
         actualizarBarras();
-      }, 4000);
+      }, 3000);
 
       guardar();
     }
 
     // =========================
-    // Simulación
+    // Simulación REALISTA (opción A)
     // =========================
 
     function tick() {
       const now = Date.now();
+      asegurarEstadoDia(now);
+
       const deltaMs = now - lastUpdate;
       lastUpdate = now;
 
-      // Para estabilidad, si el navegador se va al fondo, no queremos un salto infinito
-      const deltaMsCapped = clamp(deltaMs, 0, 60 * 1000); // cap 60s por tick
+      // Permitimos saltos grandes (si el usuario vuelve horas después), pero evitamos extremos absurdos
+      const deltaMsCapped = clamp(deltaMs, 0, 48 * 60 * 60 * 1000); // cap 48h
       const hoursPassed = deltaMsCapped / (1000 * 60 * 60);
 
-      // 1) Aburrimiento: si no haces nada por rato, baja la felicidad
-      const minsSinAccion = (now - lastActionAt) / (1000 * 60);
-      if (minsSinAccion > 10) {
-        felicidad = clamp(felicidad - (0.08 * (minsSinAccion - 10)), 0, 100);
-      }
-
-      // 2) Hambriento (>=6h sin comer) también pega a la felicidad
-      if (esHambriento()) {
-        felicidad = clamp(felicidad - (0.15 * hoursPassed), 0, 100);
-      }
-
-      // --- Decaimientos base ---
-
+      // --- Factores base ---
       const apetitoFactor = 0.8 + (apetitoAnsiedad / 100) * 0.8; // 0.8 .. 1.6
 
-      // Saciedad cae con el tiempo
-      const saciedadBaja = 1.2 * apetitoFactor * estadoDia.saciedadMod;
-      saciedadReal = clamp(saciedadReal - saciedadBaja, 0, 150);
+      // 1) Saciedad cae con el tiempo (por hora)
+      // Objetivo: que con cuidado normal la revises 2-3 veces al día.
+      const saciedadDecayPerHour = 7.0 * apetitoFactor * estadoDia.saciedadMod;
+      saciedadReal = clamp(saciedadReal - saciedadDecayPerHour * hoursPassed, 0, 150);
 
-      // Hambre: si hay sobresaciedad (>115), el hambre debe BAJAR (regla del usuario)
-      // Caso contrario, sube según falta de saciedad.
+      // 2) Hambre
       if (saciedadReal > 115) {
+        // Si hay sobresaciedad, hambre baja MUY lento (modo A)
         const exceso = saciedadReal - 115;
-        // Baja “algunos puntos” por tick. Escala con exceso y también con apetito.
-        // Importante: aquí NO sumamos hambreSube; la sobresaciedad manda.
-        // Modo 1 (lento): baja muy suave por tick
-        const hambreBaja = (0.12 + exceso * 0.01) * (0.95 + apetitoFactor * 0.05);
-        hambre = clamp(hambre - hambreBaja, 0, 100);
+        const hambreBajaPerHour = (0.6 + exceso * 0.08) * (0.95 + apetitoFactor * 0.05);
+        hambre = clamp(hambre - hambreBajaPerHour * hoursPassed, 0, 100);
       } else {
+        // Si no, hambre sube según falta de saciedad
         const faltaSaciedad = clamp01(1 - saciedadVisible() / 100);
-        const hambreSube = (1.0 + 2.8 * faltaSaciedad) * apetitoFactor * estadoDia.hambreMod;
-        hambre = clamp(hambre + hambreSube, 0, 100);
+        const hambreSubePerHour = (3.5 + 10.0 * faltaSaciedad) * apetitoFactor * estadoDia.hambreMod;
+        hambre = clamp(hambre + hambreSubePerHour * hoursPassed, 0, 100);
       }
 
-      // Energía: descansando sube lento, jugando baja rápido.
+      // 3) Energía (por hora)
+      // Descansando recupera; si te pasas sin actividad, energía deja de ser protagonista.
       if (estadoActividad === 'Descansando') {
-        energia = clamp(energia + (0.9 * estadoDia.energiaMod), 0, 100);
+        const energiaRegenPerHour = 9.0 * estadoDia.energiaMod;
+        energia = clamp(energia + energiaRegenPerHour * hoursPassed, 0, 100);
       } else if (estadoActividad === 'Jugando') {
-        energia = clamp(energia - (2.2 * estadoDia.energiaMod), 0, 100);
+        const energiaDrainPerHour = 18.0 * estadoDia.energiaMod;
+        energia = clamp(energia - energiaDrainPerHour * hoursPassed, 0, 100);
       } else if (estadoActividad === 'Comiendo') {
-        energia = clamp(energia - (0.4 * estadoDia.energiaMod), 0, 100);
+        const energiaDrainPerHour = 3.0 * estadoDia.energiaMod;
+        energia = clamp(energia - energiaDrainPerHour * hoursPassed, 0, 100);
       }
 
-      // Felicidad: cae lentísimo por defecto
-      felicidad = clamp(felicidad - (0.05 * estadoDia.felicidadMod), 0, 100);
+      // 4) Felicidad
+      // a) decae suave por el tiempo
+      const felicidadDecayPerHour = 1.2 * estadoDia.felicidadMod;
+      felicidad = clamp(felicidad - felicidadDecayPerHour * hoursPassed, 0, 100);
 
-      // Si la mascota está con MUCHA hambre, baja felicidad un poco más
+      // b) si no haces nada por mucho tiempo, baja más (aburrimiento)
+      const minsSinAccion = (now - lastActionAt) / (1000 * 60);
+      if (minsSinAccion > 120) { // 2 horas sin interacción
+        const extra = (minsSinAccion - 120) / 60; // horas extra
+        felicidad = clamp(felicidad - (1.0 * extra), 0, 100);
+      }
+
+      // c) hambriento (>=6h) afecta felicidad
+      if (esHambriento(now)) {
+        felicidad = clamp(felicidad - (1.8 * hoursPassed), 0, 100);
+      }
+
+      // d) si hambre muy alta, pega más
       if (hambre > 75) {
-        felicidad = clamp(felicidad - 0.6, 0, 100);
+        felicidad = clamp(felicidad - (2.0 * hoursPassed), 0, 100);
       }
 
-      // Físico suavizado
+      // 5) Físico suavizado (cambia lento)
       const targetFisico = 50
         + ((saciedadVisible() - 50) * 0.35)
         - ((hambre - 50) * 0.35)
         + ((estadoActividad === 'Descansando' ? 1 : -1) * 4)
         + ((energia - 50) * 0.05);
 
-      fisicoScore = clamp(fisicoScore + (targetFisico - fisicoScore) * 0.02, 0, 100);
+      // En realismo: ajuste muy gradual (más lento que antes)
+      const fisicoAdjustRate = 0.01; // por tick (se aplica cada minuto)
+      fisicoScore = clamp(fisicoScore + (targetFisico - fisicoScore) * fisicoAdjustRate, 0, 100);
 
       actualizarBarras();
       guardar();
@@ -361,7 +466,8 @@
           createdAt, lastUpdate, lastFedAt, lastActionAt,
           estadoActividad,
           apetitoAnsiedad,
-          estadoDia
+          estadoDia,
+          lastDayIndex
         };
         localStorage.setItem(LS_KEY, JSON.stringify(data));
       } catch (_) {
@@ -389,6 +495,7 @@
         estadoActividad = data.estadoActividad ?? estadoActividad;
         apetitoAnsiedad = data.apetitoAnsiedad ?? apetitoAnsiedad;
         estadoDia = data.estadoDia ?? estadoDia;
+        lastDayIndex = data.lastDayIndex ?? 0;
 
         return true;
       } catch (_) {
@@ -409,20 +516,14 @@
 
       apetitoAnsiedad = Math.floor(25 + Math.random() * 70); // 25..94
 
-      const dias = [
-        { nombre: 'Tranquilo', hambreMod: 0.9, saciedadMod: 0.9, energiaMod: 1.0, felicidadMod: 1.0 },
-        { nombre: 'Ansioso', hambreMod: 1.25, saciedadMod: 1.15, energiaMod: 1.0, felicidadMod: 1.05 },
-        { nombre: 'Frío', hambreMod: 1.15, saciedadMod: 1.05, energiaMod: 0.95, felicidadMod: 1.0 },
-        { nombre: 'Juguetón', hambreMod: 1.1, saciedadMod: 1.0, energiaMod: 1.05, felicidadMod: 0.95 },
-        { nombre: 'Lento', hambreMod: 0.95, saciedadMod: 0.95, energiaMod: 0.9, felicidadMod: 0.95 }
-      ];
-      estadoDia = dias[Math.floor(Math.random() * dias.length)];
+      lastDayIndex = 0;
+      estadoDia = pickEstadoDia(0);
 
-      saciedadReal = 60 + Math.floor(Math.random() * 30); // 60..89
-      hambre = 20 + Math.floor(Math.random() * 25);      // 20..44
-      energia = 45 + Math.floor(Math.random() * 30);     // 45..74
-      felicidad = 45 + Math.floor(Math.random() * 30);   // 45..74
-      fisicoScore = 45 + Math.floor(Math.random() * 20); // 45..64
+      saciedadReal = 60 + Math.floor(Math.random() * 30);
+      hambre = 20 + Math.floor(Math.random() * 25);
+      energia = 45 + Math.floor(Math.random() * 30);
+      felicidad = 45 + Math.floor(Math.random() * 30);
+      fisicoScore = 45 + Math.floor(Math.random() * 20);
 
       estadoActividad = 'Descansando';
       guardar();
@@ -437,48 +538,98 @@
       return 'OK: ' + name;
     }
 
+    function snapshotState() {
+      return {
+        hambre, saciedadReal, energia, felicidad, fisicoScore,
+        createdAt, lastUpdate, lastFedAt, lastActionAt,
+        estadoActividad,
+        apetitoAnsiedad,
+        estadoDia: { ...estadoDia },
+        lastDayIndex
+      };
+    }
+
+    function restoreState(s) {
+      hambre = s.hambre;
+      saciedadReal = s.saciedadReal;
+      energia = s.energia;
+      felicidad = s.felicidad;
+      fisicoScore = s.fisicoScore;
+      createdAt = s.createdAt;
+      lastUpdate = s.lastUpdate;
+      lastFedAt = s.lastFedAt;
+      lastActionAt = s.lastActionAt;
+      estadoActividad = s.estadoActividad;
+      apetitoAnsiedad = s.apetitoAnsiedad;
+      estadoDia = { ...s.estadoDia };
+      lastDayIndex = s.lastDayIndex;
+    }
+
     function runTests() {
       const out = [];
+      const snap = snapshotState();
 
-      // Test 1: alimentar aumenta saciedadReal
-      const s0 = saciedadReal;
-      alimentar();
-      out.push(assert('Alimentar sube saciedad real', saciedadReal >= s0));
+      try {
+        // Test 1: alimentar aumenta saciedadReal
+        const s0 = saciedadReal;
+        alimentar();
+        out.push(assert('Alimentar sube saciedad real', saciedadReal >= s0));
 
-      // Test 2: jugar sube felicidad
-      const f0 = felicidad;
-      jugar();
-      out.push(assert('Jugar sube felicidad', felicidad >= f0));
+        // Restaurar (alimentar cambia timestamps)
+        restoreState(snap);
 
-      // Test 3: esHambriento se activa con 6h
-      const oldFed = lastFedAt;
-      lastFedAt = Date.now() - 6.1 * 60 * 60 * 1000;
-      out.push(assert('Hambriento si > 6h', esHambriento() === true));
-      lastFedAt = oldFed;
+        // Test 2: jugar sube felicidad
+        const f0 = felicidad;
+        jugar();
+        out.push(assert('Jugar sube felicidad', felicidad >= f0));
 
-      // Test 4: clamps dentro de rango
-      hambre = 999; saciedadReal = -999; energia = 999; felicidad = -999; fisicoScore = 999;
-      hambre = clamp(hambre, 0, 100);
-      saciedadReal = clamp(saciedadReal, 0, 150);
-      energia = clamp(energia, 0, 100);
-      felicidad = clamp(felicidad, 0, 100);
-      fisicoScore = clamp(fisicoScore, 0, 100);
-      out.push(assert('Clamps rango',
-        hambre <= 100 && hambre >= 0 &&
-        saciedadReal <= 150 && saciedadReal >= 0 &&
-        energia <= 100 && energia >= 0 &&
-        felicidad <= 100 && felicidad >= 0 &&
-        fisicoScore <= 100 && fisicoScore >= 0
-      ));
+        restoreState(snap);
 
-      // Test 5: Si saciedadReal > 115, el hambre debe bajar (al menos un poco) en un tick
-      hambre = 50;
-      saciedadReal = 130;
-      lastUpdate = Date.now() - 2000; // simula 2s
-      tick();
-      out.push(assert('Hambre baja con sobresaciedad (>115)', hambre < 50));
+        // Test 3: hambriento si > 6h
+        const now = Date.now();
+        lastFedAt = now - 6.1 * 60 * 60 * 1000;
+        out.push(assert('Hambriento si > 6h', esHambriento(now) === true));
 
-      // FIX: strings con \n correctos (evita tokens inválidos)
+        restoreState(snap);
+
+        // Test 4: clamps
+        hambre = 999; saciedadReal = -999; energia = 999; felicidad = -999; fisicoScore = 999;
+        hambre = clamp(hambre, 0, 100);
+        saciedadReal = clamp(saciedadReal, 0, 150);
+        energia = clamp(energia, 0, 100);
+        felicidad = clamp(felicidad, 0, 100);
+        fisicoScore = clamp(fisicoScore, 0, 100);
+        out.push(assert('Clamps rango',
+          hambre <= 100 && hambre >= 0 &&
+          saciedadReal <= 150 && saciedadReal >= 0 &&
+          energia <= 100 && energia >= 0 &&
+          felicidad <= 100 && felicidad >= 0 &&
+          fisicoScore <= 100 && fisicoScore >= 0
+        ));
+
+        restoreState(snap);
+
+        // Test 5: sobresaciedad baja hambre
+        hambre = 50;
+        saciedadReal = 130;
+        lastUpdate = Date.now() - 60 * 1000; // simula 1 minuto
+        tick();
+        out.push(assert('Hambre baja con sobresaciedad (>115)', hambre < 50));
+
+        restoreState(snap);
+
+        // Test 6: Día 0 al crear
+        const base = Date.now();
+        createdAt = base;
+        out.push(assert('Día 0 al crear', dayIndexNow(base) === 0));
+        out.push(assert('Día 1 tras 24h', dayIndexNow(base + 24*60*60*1000 + 1000) === 1));
+
+      } catch (e) {
+        out.push(String(e));
+      } finally {
+        restoreState(snap);
+      }
+
       document.getElementById('testResults').innerText = 'Tests\n' + out.join('\n');
     }
 
@@ -496,16 +647,25 @@
     // Si se cargó en un estado activo, volvemos a descansar
     if (estadoActividad !== 'Descansando') estadoActividad = 'Descansando';
 
+    // Asegurar timestamps válidos
     const now = Date.now();
     createdAt = createdAt ?? now;
     lastUpdate = lastUpdate ?? now;
     lastFedAt = lastFedAt ?? now;
     lastActionAt = lastActionAt ?? now;
 
+    // Asegurar estado del día para el día actual
+    lastDayIndex = dayIndexNow(now);
+    estadoDia = pickEstadoDia(lastDayIndex);
+
     actualizarBarras();
     runTests();
 
-    setInterval(tick, 2000);
+    // Realismo A: tick cada 60s
+    setInterval(tick, 60 * 1000);
+
+    // Actualizar reloj visible cada 1s (solo UI)
+    setInterval(actualizarBarras, 1000);
   </script>
 </body>
 </html>
