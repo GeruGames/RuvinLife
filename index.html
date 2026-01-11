@@ -258,7 +258,7 @@
     <!-- SCREEN: REGISTER -->
     <section id="screenRegister" class="screen">
       <h1>Crear cuenta</h1>
-      <div class="subtitle">Crea tu usuario y nombra a tu mascota</div>
+      <div class="subtitle">Crea tu usuario y define tu primera mascota</div>
 
       <div class="card">
         <label for="regName">Nombre (para el saludo)</label>
@@ -270,10 +270,20 @@
         <label for="regPass">Contraseña</label>
         <input id="regPass" type="password" autocomplete="new-password" placeholder="Mínimo 4 caracteres" />
 
+        <div class="divider"></div>
+
+        <label>Tipo de mascota</label>
+        <div class="row" style="justify-content: space-between;">
+          <button class="btn inline secondary" id="regTypeDog" type="button">🐶 Perro</button>
+          <button class="btn inline secondary" id="regTypeCat" type="button">🐱 Gato</button>
+        </div>
+
+        <div class="small" style="margin-top:6px;">Sexo: <b id="regSex">—</b></div>
+
         <label for="regPet">Nombre de la mascota</label>
         <input id="regPet" placeholder="Ej: Honey" />
 
-        <button class="btn" id="btnRegister">Crear y entrar</button>
+        <button class="btn" id="btnRegister">Crear cuenta y mascota</button>
 
         <div class="error" id="regError"></div>
       </div>
@@ -1117,20 +1127,39 @@
       }
     };
 
+    let pendingRegTipo = null;
+    let pendingRegSexo = null;
+
+    function setRegTipo(tipo) {
+      pendingRegTipo = (tipo === 'Gato') ? 'Gato' : 'Perro';
+      pendingRegSexo = randomSex();
+      document.getElementById('regSex').innerText = pendingRegSexo;
+
+      document.getElementById('regTypeDog').classList.toggle('secondary', pendingRegTipo !== 'Perro');
+      document.getElementById('regTypeCat').classList.toggle('secondary', pendingRegTipo !== 'Gato');
+    }
+
+    document.getElementById('regTypeDog').onclick = () => setRegTipo('Perro');
+    document.getElementById('regTypeCat').onclick = () => setRegTipo('Gato');
+
     document.getElementById('btnRegister').onclick = () => {
       const name = document.getElementById('regName').value;
       const username = document.getElementById('regUser').value;
       const pass = document.getElementById('regPass').value;
       const pet = document.getElementById('regPet').value;
 
-      const res = register(name, username, pass, pet);
+      if (!pendingRegTipo || !pendingRegSexo) {
+        document.getElementById('regError').innerText = 'Debes elegir si tu mascota es Perro o Gato.';
+        return;
+      }
+
+      const res = register(name, username, pass, pet, pendingRegTipo, pendingRegSexo);
       const el = document.getElementById('regError');
       el.innerText = res.ok ? '' : res.msg;
 
       if (res.ok) {
         showScreen('hub');
         renderHub();
-        actualizarBarras();
       }
     };
 
